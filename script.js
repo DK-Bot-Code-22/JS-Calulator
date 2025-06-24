@@ -12,6 +12,28 @@ function getLastChar() {
     return display.value.slice(-1);
 }
 
+function safeEval(expression) {
+    try {
+        let jsExpression = expression
+        .replace(/x/g, '*')
+        .replace(/÷/g, '/');
+
+        if (!/^[0-9+\-*/.()]+$/.test(jsExpression)){
+            throw new Error('Invalid characters in expression');
+        }
+
+        const result = Function(' "use strict"; return (' + jsExpression + ')')();
+
+        if (!isFinite(result)) {
+            throw new Error('Invalid calculation result');      
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Calculation error:', error);
+        return 'Error';
+    }
+}
 function appendToDisplay(value) {
     console.log('Button pressed:', value);
     
@@ -112,9 +134,43 @@ function deleteLast() {
 }
 
 function calculate() {
-    console.log('Equals button pressed.');
+    let expression = display.value;
 
-    alert('Equals button was clicked');
+    //Don't calcu if display is 0 or empty
+    if (expression === '0' || expression === ''){
+        return;
+    }
+
+    // Don't calcu if expression ends with operator
+    if (isOperator(getLastChar())){
+        return;
+    }
+
+    console.log('Çalculating expression:', expression); // Debug log
+
+    let result = safeEval(expression);
+
+    if (result === 'Error') {
+        display.value = 'Error';
+        setTimeout(() => {
+            clearDisplay()
+        }, 2000);
+    } else {
+        if (Number.isInteger(result)) {
+            display.value = result.toString();
+        } else {
+            display.value = parseFloat(result.toFixed(10)).toString();
+        }
+
+        justCalculated = true;
+    }
+
+    // visual feedback - moved outside the else block
+
+    display.style.backgroundColor = '#e8f5e8';
+    setTimeout(() => {
+        display.style.backgroundColor = '';
+    }, 300);
 }
 
 document.addEventListener('keydown', function(event) {
